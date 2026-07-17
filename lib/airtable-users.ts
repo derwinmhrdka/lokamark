@@ -157,6 +157,20 @@ async function findUserByField(field: 'username' | 'email', value: string) {
   return data.records?.[0] ?? null
 }
 
+/** Looks up a user by username (case-insensitive). */
+export async function getUserByUsername(username: string): Promise<UserLogin | null> {
+  const trimmed = username.trim()
+  if (!trimmed) return null
+
+  const fieldParams = USER_FIELDS.map((f) => `fields%5B%5D=${encodeURIComponent(f)}`).join('&')
+  const formula = encodeURIComponent(
+    `LOWER({username})=LOWER('${escapeFormulaString(trimmed)}')`,
+  )
+  const data = await fetchUserTable(`?filterByFormula=${formula}&maxRecords=1&${fieldParams}`)
+  const record = data.records?.[0]
+  return record ? mapUser(record) : null
+}
+
 export type LoginResult =
   | { ok: true; user: UserLogin }
   | { ok: false; reason: 'invalid_credentials' | 'incomplete_profile' }

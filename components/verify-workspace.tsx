@@ -1,6 +1,6 @@
 'use client'
 
-import { startTransition, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Loader2, ScrollText } from 'lucide-react'
 import { Scanner } from '@/components/scanner'
@@ -62,6 +62,14 @@ export function VerifyWorkspace() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('id')?.trim()
+    if (id) void handleVerify(id)
+    // Deep link from approval email (?id=LKM-...)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="grid gap-8 lg:grid-cols-2 lg:items-start">

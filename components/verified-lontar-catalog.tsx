@@ -49,13 +49,12 @@ export function VerifiedLontarCatalog({ manuscripts }: VerifiedLontarCatalogProp
           const src = imageSrc(item.image)
           return (
             <li key={item.id}>
-              <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md">
-                <button
-                  type="button"
-                  onClick={() => setLightbox({ src, alt: item.name })}
-                  className="relative aspect-[4/5] w-full overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold/50"
-                  aria-label={`Perbesar gambar ${item.name}`}
-                >
+              <button
+                type="button"
+                onClick={() => setSelected(item)}
+                className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+              >
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted">
                   <Image
                     src={src}
                     alt={item.name}
@@ -68,15 +67,8 @@ export function VerifiedLontarCatalog({ manuscripts }: VerifiedLontarCatalogProp
                     <CheckCircle2 className="size-3" aria-hidden="true" />
                     Verified
                   </span>
-                  <span className="absolute bottom-2 right-2 inline-flex size-8 items-center justify-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
-                    <ZoomIn className="size-4" aria-hidden="true" />
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelected(item)}
-                  className="flex flex-1 flex-col gap-1 p-3 text-left sm:p-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gold/50"
-                >
+                </div>
+                <div className="flex flex-1 flex-col gap-1 p-3 sm:p-3.5">
                   <p className="font-mono text-[10px] font-semibold tracking-wide text-gold sm:text-[11px]">
                     {item.id}
                   </p>
@@ -86,8 +78,8 @@ export function VerifiedLontarCatalog({ manuscripts }: VerifiedLontarCatalogProp
                   <p className="mt-auto line-clamp-1 pt-1 text-xs text-muted-foreground">
                     {item.category || item.institution || 'Lontar terverifikasi'}
                   </p>
-                </button>
-              </article>
+                </div>
+              </button>
             </li>
           )
         })}
@@ -98,6 +90,7 @@ export function VerifiedLontarCatalog({ manuscripts }: VerifiedLontarCatalogProp
           manuscript={selected}
           onClose={() => setSelected(null)}
           onOpenImage={(src, alt) => setLightbox({ src, alt })}
+          suppressEscape={Boolean(lightbox)}
         />
       ) : null}
 
@@ -191,10 +184,12 @@ function LontarDetailModal({
   manuscript,
   onClose,
   onOpenImage,
+  suppressEscape = false,
 }: {
   manuscript: Manuscript
   onClose: () => void
   onOpenImage: (src: string, alt: string) => void
+  suppressEscape?: boolean
 }) {
   const titleId = useId()
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -204,10 +199,10 @@ function LontarDetailModal({
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    closeRef.current?.focus()
+    if (!suppressEscape) closeRef.current?.focus()
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape' && !suppressEscape) close()
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -215,7 +210,7 @@ function LontarDetailModal({
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [close])
+  }, [close, suppressEscape])
 
   return (
     <div

@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { LontarQrCard } from '@/components/lontar-qr-card'
 import type { ManuscriptRecord } from '@/lib/manuscripts'
 
 export function ApprovalList() {
   const [records, setRecords] = useState<ManuscriptRecord[]>([])
   const [loading, setLoading] = useState(true)
-  const [approvingId, setApprovingId] = useState<string | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [approved, setApproved] = useState<ManuscriptRecord | null>(null)
 
@@ -32,23 +32,32 @@ export function ApprovalList() {
     }
   }, [])
 
-  async function handleApprove(record: ManuscriptRecord) {
-    setApprovingId(record.recordId)
+  async function handleDecision(record: ManuscriptRecord, action: 'approve' | 'reject') {
+    if (action === 'reject') {
+      const confirmed = window.confirm(`Tolak pengajuan "${record.name}" (${record.id})?`)
+      if (!confirmed) return
+    }
+
+    setBusyId(record.recordId)
     setError(null)
+
     try {
       const res = await fetch('/api/admin/approval', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recordId: record.recordId }),
+        body: JSON.stringify({ recordId: record.recordId, action }),
       })
       const data = (await res.json()) as { record?: ManuscriptRecord; error?: string }
-      if (!res.ok || !data.record) throw new Error(data.error || 'Gagal menyetujui')
-      setApproved(data.record)
+      if (!res.ok || !data.record) {
+        throw new Error(data.error || (action === 'approve' ? 'Gagal menyetujui' : 'Gagal menolak'))
+      }
+
       setRecords((prev) => prev.filter((r) => r.recordId !== record.recordId))
+      setApproved(action === 'approve' ? data.record : null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menyetujui lontar')
+      setError(err instanceof Error ? err.message : 'Gagal memproses keputusan')
     } finally {
-      setApprovingId(null)
+      setBusyId(null)
     }
   }
 
@@ -91,30 +100,44 @@ export function ApprovalList() {
         </p>
       ) : (
         <ul className="space-y-3">
-          {records.map((record) => (
-            <li
-              key={record.recordId}
-              className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0">
-                <p className="font-mono text-xs font-semibold text-gold">{record.id}</p>
-                <p className="mt-0.5 font-serif text-lg font-bold text-foreground">{record.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {record.category || '—'}
-                  {record.createdBy ? ` · oleh ${record.createdBy}` : ''}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={approvingId === record.recordId}
-                onClick={() => handleApprove(record)}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-gold-foreground transition hover:brightness-95 disabled:opacity-60"
+          {records.map((record) => {
+            const busy = busyId === record.recordId
+            return (
+              <li
+                key={record.recordId}
+                className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
               >
-                <CheckCircle2 className="size-4" aria-hidden="true" />
-                {approvingId === record.recordId ? 'Menyetujui…' : 'Approve'}
-              </button>
-            </li>
-          ))}
+                <div className="min-w-0">
+                  <p className="font-mono text-xs font-semibold text-gold">{record.id}</p>
+                  <p className="mt-0.5 font-serif text-lg font-bold text-foreground">{record.name}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {record.category || '—'}
+                    {record.createdBy ? ` · oleh ${record.createdBy}` : ''}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleDecision(record, 'reject')}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-danger/30 px-4 py-2.5 text-sm font-semibold text-danger transition hover:bg-danger/5 disabled:opacity-60"
+                  >
+                    <XCircle className="size-4" aria-hidden="true" />
+                    {busy ? '…' : 'Reject'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleDecision(record, 'approve')}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-gold-foreground transition hover:brightness-95 disabled:opacity-60"
+                  >
+                    <CheckCircle2 className="size-4" aria-hidden="true" />
+                    {busy ? '…' : 'Approve'}
+                  </button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

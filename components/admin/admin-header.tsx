@@ -22,7 +22,7 @@ export function AdminHeader() {
   return (
     <header className="border-b border-border bg-primary">
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
-        <div className="flex items-center justify-between gap-4">
+        <div>
           <Link href="/" className="flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-xl bg-gold text-gold-foreground">
               <Landmark className="size-5" aria-hidden="true" />
@@ -31,13 +31,6 @@ export function AdminHeader() {
               <p className="font-serif text-lg font-bold text-primary-foreground">LOKAMARK Admin</p>
               <p className="text-xs text-primary-foreground/60">Kelola data lontar</p>
             </div>
-          </Link>
-
-          <Link
-            href="/"
-            className="rounded-xl border border-primary-foreground/20 px-3 py-2 text-sm text-primary-foreground/80 transition hover:bg-primary-foreground/10"
-          >
-            Situs Publik
           </Link>
         </div>
 

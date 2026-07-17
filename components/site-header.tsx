@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Landmark, LogIn, ShieldCheck, User } from 'lucide-react'
+import { Landmark, LogIn, User } from 'lucide-react'
 import { getSessionUser } from '@/lib/auth'
 
 export async function SiteHeader() {
@@ -23,30 +23,24 @@ export async function SiteHeader() {
           </div>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-2 rounded-full border border-gold/30 bg-primary-foreground/5 px-3 py-1.5 text-xs font-medium text-primary-foreground sm:flex">
-            <ShieldCheck className="size-4 text-gold" aria-hidden="true" />
-            Terverifikasi Digital
-          </div>
-          {user ? (
-            <Link
-              href={accountHref}
-              aria-label={`Akun ${user.username}`}
-              title={user.username}
-              className="inline-flex size-9 items-center justify-center rounded-full border border-gold/30 bg-primary-foreground/5 text-primary-foreground transition hover:bg-primary-foreground/10"
-            >
-              <User className="size-4 text-gold" aria-hidden="true" />
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-primary-foreground/5 px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:bg-primary-foreground/10"
-            >
-              <LogIn className="size-4 text-gold" aria-hidden="true" />
-              Login
-            </Link>
-          )}
-        </div>
+        {user ? (
+          <Link
+            href={accountHref}
+            aria-label={`Akun ${user.username}`}
+            title={user.username}
+            className="inline-flex size-9 items-center justify-center rounded-full border border-gold/30 bg-primary-foreground/5 text-primary-foreground transition hover:bg-primary-foreground/10"
+          >
+            <User className="size-4 text-gold" aria-hidden="true" />
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-primary-foreground/5 px-3 py-1.5 text-xs font-medium text-primary-foreground transition hover:bg-primary-foreground/10"
+          >
+            <LogIn className="size-4 text-gold" aria-hidden="true" />
+            Login
+          </Link>
+        )}
       </div>
     </header>
   )
