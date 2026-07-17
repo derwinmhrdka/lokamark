@@ -92,9 +92,7 @@ function SectionHeader({ count }: { count: number }) {
     <div className="text-center sm:text-left">
       <h2 className="font-serif text-2xl font-bold text-foreground">Koleksi Terverifikasi</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        {count > 0
-          ? `${count} lontar terdaftar resmi — klik kartu untuk melihat detail.`
-          : 'Daftar lontar yang sudah diverifikasi akan muncul di sini.'}
+          {count > 0 ? `${count} lontar` : 'Belum ada data'}
       </p>
     </div>
   )

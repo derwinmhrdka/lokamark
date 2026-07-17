@@ -60,9 +60,6 @@ export function RegisterForm() {
           <Landmark className="size-6" aria-hidden="true" />
         </span>
         <h1 className="font-serif text-2xl font-bold text-foreground">Daftar Akun</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Buat akun visitor untuk mengakses fitur LOKAMARK
-        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,7 +81,6 @@ export function RegisterForm() {
             onChange={(e) => setUsername(e.target.value)}
             className={inputClass}
           />
-          <p className="mt-1 text-xs text-muted-foreground">Harus unik. Email boleh sama dengan akun lain.</p>
         </div>
         <div>
           <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">

@@ -19,7 +19,7 @@ export function LontarTable({ records }: LontarTableProps) {
     if (record.status === 'inactive') return
 
     const confirmed = window.confirm(
-      `Nonaktifkan lontar "${record.name}" (${record.id})? Status akan menjadi inactive dan tetap tampil di daftar.`,
+      `Nonaktifkan lontar "${record.name}" (${record.id})?`,
     )
     if (!confirmed) return
 

@@ -47,12 +47,7 @@ export function LontarForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {autoId ? (
-        <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          ID akan digenerate otomatis dengan format{' '}
-          <span className="font-mono font-medium text-foreground">LKM-{new Date().getFullYear()}-XXX</span>
-        </div>
-      ) : (
+      {!autoId ? (
         <div>
           <label htmlFor="id" className={labelClass}>
             ID Naskah *
@@ -68,7 +63,7 @@ export function LontarForm({
             className={`${inputClass} font-mono uppercase tracking-wide ${idReadOnly ? 'bg-muted' : ''}`}
           />
         </div>
-      )}
+      ) : null}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className={autoId ? 'sm:col-span-2' : undefined}>

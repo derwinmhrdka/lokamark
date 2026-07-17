@@ -43,7 +43,6 @@ export function LoginForm() {
           <Landmark className="size-6" aria-hidden="true" />
         </span>
         <h1 className="font-serif text-2xl font-bold text-foreground">LOKAMARK Login</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Masuk sebagai admin atau visitor</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

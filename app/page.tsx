@@ -18,16 +18,11 @@ export default async function Page() {
 
       <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         <section className="py-8 text-center sm:py-12">
-          <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-medium text-foreground">
-            <Sparkles className="size-3.5 text-gold" aria-hidden="true" />
-            Autentikasi Warisan Budaya
-          </span>
           <h1 className="mt-4 font-serif text-3xl font-bold leading-tight text-foreground text-balance sm:text-4xl">
             Verifikasi Keaslian Naskah Kuno Bali
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base text-pretty">
-            Pastikan keaslian lontar dan manuskrip warisan Bali. Pindai QR Code pada naskah atau
-            masukkan ID Naskah secara manual untuk memverifikasinya.
+            Pindai QR Code atau masukkan ID naskah untuk memverifikasi keasliannya.
           </p>
         </section>
 

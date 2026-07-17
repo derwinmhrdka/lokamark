@@ -20,12 +20,6 @@ export default async function VisitorRegisterLontarPage() {
             Kembali
           </Link>
           <h1 className="font-serif text-2xl font-bold text-foreground">Register Lontar</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Ajukan registrasi lontar. ID digenerate otomatis (
-            <span className="font-mono text-foreground">LKM-{new Date().getFullYear()}-XXX</span>
-            ). Status menunggu persetujuan admin (
-            <span className="font-medium text-foreground">waiting for approval</span>).
-          </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <RegisterLontarForm />

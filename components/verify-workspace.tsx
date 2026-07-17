@@ -1,6 +1,6 @@
 'use client'
 
-import { startTransition, useEffect, useState } from 'react'
+import { startTransition, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Loader2, ScrollText } from 'lucide-react'
 import { Scanner } from '@/components/scanner'
@@ -27,29 +27,7 @@ type VerifyResponse =
 export function VerifyWorkspace() {
   const [result, setResult] = useState<ScanResult | null>(null)
   const [loading, setLoading] = useState(false)
-  const [sampleIds, setSampleIds] = useState<string[]>([])
-  const [samplesError, setSamplesError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/samples')
-      .then(async (res) => {
-        const data = (await res.json()) as { ids?: string[]; error?: string }
-        if (cancelled) return
-        if (!res.ok) {
-          setSamplesError(data.error || 'Gagal memuat data Airtable')
-          return
-        }
-        setSampleIds(data.ids ?? [])
-      })
-      .catch(() => {
-        if (!cancelled) setSamplesError('Tidak dapat terhubung ke server')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   async function handleVerify(id: string) {
     const trimmed = id.trim()
@@ -99,35 +77,11 @@ export function VerifyWorkspace() {
             <ScrollText className="size-5 text-gold" aria-hidden="true" />
             Pindai Naskah
           </h2>
-          <Scanner onScan={handleVerify} sampleIds={sampleIds} />
+          <Scanner onScan={handleVerify} />
         </section>
 
         <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
           <ManualInput onSubmit={handleVerify} />
-          <div className="mt-4 border-t border-border pt-4">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Contoh ID untuk dicoba
-            </p>
-            {samplesError ? (
-              <p className="text-xs text-danger">{samplesError}</p>
-            ) : sampleIds.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Memuat ID dari Airtable…</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {sampleIds.map((sampleId) => (
-                  <button
-                    key={sampleId}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleVerify(sampleId)}
-                    className="rounded-lg border border-border bg-secondary px-2.5 py-1 font-mono text-xs text-secondary-foreground transition hover:border-gold hover:text-foreground disabled:opacity-60"
-                  >
-                    {sampleId}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </section>
       </div>
 
@@ -151,8 +105,7 @@ export function VerifyWorkspace() {
               <ScrollText className="size-6" aria-hidden="true" />
             </span>
             <p className="text-sm text-muted-foreground text-pretty">
-              Hasil verifikasi akan ditampilkan di sini setelah Anda memindai QR Code atau
-              memasukkan ID Naskah.
+              Hasil verifikasi akan ditampilkan di sini.
             </p>
           </div>
         )}

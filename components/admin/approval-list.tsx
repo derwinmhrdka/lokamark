@@ -50,9 +50,7 @@ export function ApprovalList({ records: initialRecords }: ApprovalListProps) {
         <div className="rounded-2xl border border-success/30 bg-success/5 p-5">
           <div className="mb-4 flex items-center gap-2 text-success">
             <CheckCircle2 className="size-5" aria-hidden="true" />
-            <p className="text-sm font-semibold">
-              Disetujui — QR code siap digunakan untuk scan di beranda
-            </p>
+            <p className="text-sm font-semibold">Disetujui</p>
           </div>
           <LontarQrCard id={approved.id} name={approved.name} qrUrl={approved.qrUrl} />
           <button

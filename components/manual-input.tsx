@@ -31,7 +31,7 @@ export function ManualInput({ onSubmit }: ManualInputProps) {
           inputMode="text"
           autoComplete="off"
           spellCheck={false}
-          placeholder="Contoh: LKM-2024-001"
+          placeholder="LKM-2026-001"
           className="w-full rounded-xl border border-input bg-card px-4 py-3 text-sm uppercase tracking-wide text-foreground placeholder:normal-case placeholder:tracking-normal placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/40"
         />
         <button
@@ -42,9 +42,6 @@ export function ManualInput({ onSubmit }: ManualInputProps) {
           Verifikasi
         </button>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Gunakan opsi ini jika kamera gagal membaca QR Code pada naskah.
-      </p>
     </form>
   )
 }

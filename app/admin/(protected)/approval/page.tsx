@@ -24,9 +24,6 @@ export default async function ApprovalPage() {
           Kembali
         </Link>
         <h1 className="font-serif text-2xl font-bold text-foreground">Approval</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Setujui pengajuan lontar visitor. Setelah approved, QR code dapat di-scan di beranda.
-        </p>
       </div>
 
       {loadError ? (

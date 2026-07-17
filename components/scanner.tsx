@@ -5,12 +5,11 @@ import { Camera, Loader2, QrCode, ScanLine } from 'lucide-react'
 
 type ScannerProps = {
   onScan: (id: string) => void | Promise<void>
-  sampleIds?: string[]
 }
 
 const INVALID_DEMO_ID = 'LKM-9999-XXX'
 
-export function Scanner({ onScan, sampleIds = [] }: ScannerProps) {
+export function Scanner({ onScan }: ScannerProps) {
   const [scanning, setScanning] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -27,11 +26,9 @@ export function Scanner({ onScan, sampleIds = [] }: ScannerProps) {
 
   function startScan() {
     if (scanning) return
-    const pool = sampleIds.length > 0 ? [...sampleIds, INVALID_DEMO_ID] : [INVALID_DEMO_ID]
     setScanning(true)
     timer.current = setTimeout(() => {
-      const id = pool[Math.floor(Math.random() * pool.length)]
-      emitScan(id)
+      emitScan(INVALID_DEMO_ID)
     }, 2200)
   }
 
@@ -95,9 +92,6 @@ export function Scanner({ onScan, sampleIds = [] }: ScannerProps) {
           </>
         )}
       </button>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        Simulasi pemindai — hasil akan muncul secara acak untuk demonstrasi.
-      </p>
     </div>
   )
 }

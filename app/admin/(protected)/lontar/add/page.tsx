@@ -32,11 +32,6 @@ export default function AddLontarPage() {
           Kembali
         </Link>
         <h1 className="font-serif text-2xl font-bold text-foreground">Add Lontar</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tambah data lontar baru. ID digenerate otomatis (
-          <span className="font-mono text-foreground">LKM-{new Date().getFullYear()}-XXX</span>
-          ). Status langsung <span className="font-medium text-foreground">verified</span>.
-        </p>
       </div>
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <LontarForm

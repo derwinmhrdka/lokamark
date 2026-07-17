@@ -1,6 +1,14 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { ClipboardList, FilePlus2 } from 'lucide-react'
+import { MenuLogoutButton } from '@/components/menu-logout-button'
 import { getSessionUser } from '@/lib/auth'
+
+const menuClass =
+  'flex items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-gold/50 hover:shadow-md'
+
+const iconWrapClass =
+  'flex size-11 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-foreground'
 
 export default async function VisitorPage() {
   const user = await getSessionUser()
@@ -11,21 +19,21 @@ export default async function VisitorPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         <div>
           <h1 className="font-serif text-2xl font-bold text-foreground">Visitor Menu</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Halo {user.username}, pilih fitur.</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Link href="/visitor/register-lontar" className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Link href="/visitor/register-lontar" className={menuClass}>
+            <span className={iconWrapClass}>
+              <FilePlus2 className="size-5" aria-hidden="true" />
+            </span>
             <p className="font-semibold">Register Lontar</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Ajukan lontar baru — status menunggu persetujuan admin
-            </p>
           </Link>
-          <Link href="/visitor/requests" className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <Link href="/visitor/requests" className={menuClass}>
+            <span className={iconWrapClass}>
+              <ClipboardList className="size-5" aria-hidden="true" />
+            </span>
             <p className="font-semibold">Your Request</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Cek status & simpan QR setelah disetujui
-            </p>
           </Link>
+          <MenuLogoutButton />
         </div>
       </div>
     </div>

@@ -77,10 +77,7 @@ export function LontarQrCard({ id, name, qrUrl, className = '' }: LontarQrCardPr
           <QrCode className="size-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">QR Code Lontar</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Scan di beranda untuk verifikasi. Simpan ke ponsel berisi ID, nama, dan QR.
-          </p>
+          <p className="text-sm font-semibold text-foreground">QR Code</p>
         </div>
       </div>
 

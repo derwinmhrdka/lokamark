@@ -43,9 +43,6 @@ export function VisitorRequestsClient() {
             Kembali
           </Link>
           <h1 className="font-serif text-2xl font-bold text-foreground">Your Request</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Status pengajuan lontar Anda. Jika sudah verified, simpan QR ke ponsel.
-          </p>
         </div>
 
         {loading ? (
@@ -84,15 +81,7 @@ export function VisitorRequestsClient() {
                   <div className="p-4 sm:p-5">
                     <LontarQrCard id={record.id} name={record.name} qrUrl={record.qrUrl} />
                   </div>
-                ) : record.status === 'waiting for approval' ? (
-                  <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">
-                    Menunggu persetujuan admin. QR code akan tersedia setelah disetujui.
-                  </p>
-                ) : (
-                  <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">
-                    Lontar ini tidak aktif.
-                  </p>
-                )}
+                ) : null}
               </li>
             ))}
           </ul>
