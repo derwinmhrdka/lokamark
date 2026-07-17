@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto'
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import type { UserRole } from '@/lib/airtable-users'
 
@@ -71,12 +72,13 @@ export function verifySessionToken(token: string): SessionUser | null {
   }
 }
 
-export async function getSessionUser(): Promise<SessionUser | null> {
+/** Per-request cached session lookup (dedupes layout + page). */
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value
   if (!token) return null
   return verifySessionToken(token)
-}
+})
 
 export async function getSessionUsername(): Promise<string | null> {
   const user = await getSessionUser()

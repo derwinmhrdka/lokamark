@@ -1,21 +1,36 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { LontarQrCard } from '@/components/lontar-qr-card'
 import type { ManuscriptRecord } from '@/lib/manuscripts'
 
-type ApprovalListProps = {
-  records: ManuscriptRecord[]
-}
-
-export function ApprovalList({ records: initialRecords }: ApprovalListProps) {
-  const router = useRouter()
-  const [records, setRecords] = useState(initialRecords)
+export function ApprovalList() {
+  const [records, setRecords] = useState<ManuscriptRecord[]>([])
+  const [loading, setLoading] = useState(true)
   const [approvingId, setApprovingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [approved, setApproved] = useState<ManuscriptRecord | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/admin/approval')
+      .then(async (res) => {
+        const data = (await res.json()) as { records?: ManuscriptRecord[]; error?: string }
+        if (cancelled) return
+        if (!res.ok) throw new Error(data.error || 'Gagal memuat approval')
+        setRecords(data.records ?? [])
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Gagal memuat approval')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function handleApprove(record: ManuscriptRecord) {
     setApprovingId(record.recordId)
@@ -30,12 +45,19 @@ export function ApprovalList({ records: initialRecords }: ApprovalListProps) {
       if (!res.ok || !data.record) throw new Error(data.error || 'Gagal menyetujui')
       setApproved(data.record)
       setRecords((prev) => prev.filter((r) => r.recordId !== record.recordId))
-      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyetujui lontar')
     } finally {
       setApprovingId(null)
     }
+  }
+
+  if (loading) {
+    return (
+      <p className="rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground shadow-sm">
+        Memuat pengajuan…
+      </p>
+    )
   }
 
   return (

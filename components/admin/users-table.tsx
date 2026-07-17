@@ -1,20 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Pencil, Trash2 } from 'lucide-react'
 import type { UserLogin } from '@/lib/airtable-users'
 
-type UsersTableProps = {
-  users: UserLogin[]
-  currentUsername: string
-}
-
-export function UsersTable({ users, currentUsername }: UsersTableProps) {
-  const router = useRouter()
+export function UsersTable() {
+  const [users, setUsers] = useState<UserLogin[]>([])
+  const [currentUsername, setCurrentUsername] = useState('')
+  const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/admin/users')
+      .then(async (res) => {
+        const data = (await res.json()) as {
+          users?: UserLogin[]
+          currentUsername?: string
+          error?: string
+        }
+        if (cancelled) return
+        if (!res.ok) throw new Error(data.error || 'Gagal memuat user')
+        setUsers(data.users ?? [])
+        setCurrentUsername(data.currentUsername ?? '')
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Gagal memuat user')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function handleDelete(user: UserLogin) {
     if (user.username.toLowerCase() === currentUsername.toLowerCase()) return
@@ -31,12 +52,20 @@ export function UsersTable({ users, currentUsername }: UsersTableProps) {
       })
       const data = (await res.json()) as { error?: string }
       if (!res.ok) throw new Error(data.error || 'Gagal menghapus user')
-      router.refresh()
+      setUsers((prev) => prev.filter((u) => u.recordId !== user.recordId))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menghapus user')
     } finally {
       setDeletingId(null)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground shadow-sm">
+        Memuat data user…
+      </div>
+    )
   }
 
   return (
@@ -99,19 +128,25 @@ export function UsersTable({ users, currentUsername }: UsersTableProps) {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/admin/users/${user.recordId}/edit`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium transition hover:border-gold hover:text-foreground"
+                          prefetch
+                          aria-label={`Edit ${user.username}`}
+                          title="Edit"
+                          className="inline-flex size-8 items-center justify-center rounded-lg border border-border transition hover:border-gold hover:text-foreground"
                         >
                           <Pencil className="size-3.5" aria-hidden="true" />
-                          Edit
                         </Link>
                         <button
                           type="button"
                           disabled={deletingId === user.recordId || isSelf}
                           onClick={() => handleDelete(user)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-danger/30 px-2.5 py-1.5 text-xs font-medium text-danger transition hover:bg-danger/5 disabled:opacity-60"
+                          aria-label={`Hapus ${user.username}`}
+                          title="Delete"
+                          className="inline-flex size-8 items-center justify-center rounded-lg border border-danger/30 text-danger transition hover:bg-danger/5 disabled:opacity-60"
                         >
-                          <Trash2 className="size-3.5" aria-hidden="true" />
-                          {deletingId === user.recordId ? 'Menghapus…' : 'Delete'}
+                          <Trash2
+                            className={`size-3.5 ${deletingId === user.recordId ? 'animate-pulse' : ''}`}
+                            aria-hidden="true"
+                          />
                         </button>
                       </div>
                     </td>

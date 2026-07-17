@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { Landmark, LogOut } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Landmark } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/visitor', label: 'Menu', exact: true },
@@ -16,14 +16,7 @@ function isActive(pathname: string, href: string, exact?: boolean) {
 }
 
 export function VisitorHeader() {
-  const router = useRouter()
   const pathname = usePathname()
-
-  async function handleLogout() {
-    await fetch('/api/auth/login', { method: 'DELETE' })
-    router.push('/login')
-    router.refresh()
-  }
 
   return (
     <header className="border-b border-border bg-primary">
@@ -39,34 +32,22 @@ export function VisitorHeader() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="hidden rounded-xl border border-primary-foreground/20 px-3 py-2 text-sm text-primary-foreground/80 transition hover:bg-primary-foreground/10 sm:inline-flex"
-            >
-              Situs Publik
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 rounded-xl border border-primary-foreground/20 px-3 py-2 text-sm text-primary-foreground/80 transition hover:bg-primary-foreground/10"
-            >
-              <LogOut className="size-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Keluar</span>
-            </button>
-          </div>
+          <Link
+            href="/"
+            className="rounded-xl border border-primary-foreground/20 px-3 py-2 text-sm text-primary-foreground/80 transition hover:bg-primary-foreground/10"
+          >
+            Situs Publik
+          </Link>
         </div>
 
-        <nav
-          aria-label="Visitor"
-          className="-mx-1 mt-4 flex gap-1 overflow-x-auto pb-0.5"
-        >
+        <nav aria-label="Visitor" className="-mx-1 mt-4 flex gap-1 overflow-x-auto pb-0.5">
           {NAV_ITEMS.map((item) => {
             const active = isActive(pathname, item.href, 'exact' in item ? item.exact : false)
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 className={
                   active
                     ? 'shrink-0 rounded-lg bg-gold px-3 py-1.5 text-sm font-semibold text-gold-foreground'

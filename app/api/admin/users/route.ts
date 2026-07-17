@@ -8,9 +8,9 @@ import {
 
 export async function GET() {
   try {
-    await requireAdminSession()
+    const admin = await requireAdminSession()
     const users = await listAllUsers()
-    return NextResponse.json({ users })
+    return NextResponse.json({ users, currentUsername: admin.username })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unauthorized'
     const status = message === 'Unauthorized' ? 401 : 502
