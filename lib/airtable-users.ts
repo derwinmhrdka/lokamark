@@ -246,3 +246,178 @@ export async function registerVisitorUser(input: RegisterVisitorInput): Promise<
   if (!user) throw new Error('Gagal membuat akun')
   return user
 }
+
+export type AdminCreateUserInput = {
+  username: string
+  email: string
+  password: string
+  role: UserRole
+}
+
+export type AdminUpdateUserInput = {
+  email: string
+  role: UserRole
+  password?: string
+}
+
+function fieldParams() {
+  return USER_FIELDS.map((f) => `fields%5B%5D=${encodeURIComponent(f)}`).join('&')
+}
+
+/** Lists all users from Airtable `user_login` (password never returned). */
+export async function listAllUsers(): Promise<UserLogin[]> {
+  const data = await fetchUserTable(`?${fieldParams()}&sort%5B0%5D%5Bfield%5D=username`)
+  return data.records?.map(mapUser).filter((u): u is UserLogin => u !== null) ?? []
+}
+
+export async function getUserByRecordId(recordId: string): Promise<UserLogin | null> {
+  const id = recordId.trim()
+  if (!id) return null
+
+  const config = getConfig()
+  const url = `https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(config.tableName)}/${encodeURIComponent(id)}`
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  })
+
+  if (response.status === 404) return null
+
+  const data = (await response.json()) as UserLoginRecord & { error?: { message?: string } }
+  if (!response.ok) {
+    throw new Error(data.error?.message || `Airtable request failed: HTTP ${response.status}`)
+  }
+
+  return mapUser({ id: data.id, fields: data.fields })
+}
+
+/** Creates a user (admin or visitor) from the admin panel. */
+export async function createUserByAdmin(
+  input: AdminCreateUserInput,
+  actor: string,
+): Promise<UserLogin> {
+  const username = input.username.trim()
+  const email = input.email.trim().toLowerCase()
+  const password = input.password
+  const role = input.role
+  const actorName = actor.trim()
+
+  if (!username || !email || !password) {
+    throw new Error('Username, email, dan password wajib diisi')
+  }
+  if (role !== 'admin' && role !== 'visitor') {
+    throw new Error('Role harus admin atau visitor')
+  }
+  if (!isValidUsername(username)) {
+    throw new Error(
+      'Username 3–32 karakter, hanya huruf, angka, titik, underscore, atau tanda hubung',
+    )
+  }
+  if (!isValidEmail(email)) {
+    throw new Error('Format email tidak valid. Contoh: nama@domain.com')
+  }
+  if (password.length < 6) {
+    throw new Error('Password minimal 6 karakter')
+  }
+
+  const existingUsername = await findUserByField('username', username)
+  if (existingUsername) {
+    throw new Error('Username sudah digunakan')
+  }
+
+  const now = nowDateTime()
+  const fields: UserLoginFields = {
+    username,
+    email,
+    password,
+    role,
+    createdDate: now,
+    createdBy: actorName,
+    updatedDate: now,
+    updatedBy: actorName,
+  }
+
+  const data = await fetchUserTable('', {
+    method: 'POST',
+    body: JSON.stringify({ records: [{ fields }] }),
+  })
+
+  const record = data.records?.[0]
+  const user = record ? mapUser(record) : null
+  if (!user) throw new Error('Gagal membuat user')
+  return user
+}
+
+/** Updates email/role and optionally password. Username is immutable. */
+export async function updateUserByAdmin(
+  recordId: string,
+  input: AdminUpdateUserInput,
+  actor: string,
+): Promise<UserLogin> {
+  const email = input.email.trim().toLowerCase()
+  const role = input.role
+  const password = input.password?.trim()
+  const actorName = actor.trim()
+
+  if (!email) throw new Error('Email wajib diisi')
+  if (role !== 'admin' && role !== 'visitor') {
+    throw new Error('Role harus admin atau visitor')
+  }
+  if (!isValidEmail(email)) {
+    throw new Error('Format email tidak valid. Contoh: nama@domain.com')
+  }
+  if (password !== undefined && password.length > 0 && password.length < 6) {
+    throw new Error('Password minimal 6 karakter')
+  }
+
+  const existing = await getUserByRecordId(recordId)
+  if (!existing) throw new Error('User tidak ditemukan')
+
+  const fields: UserLoginFields = {
+    email,
+    role,
+    updatedDate: nowDateTime(),
+    updatedBy: actorName,
+  }
+  if (password) {
+    fields.password = password
+  }
+
+  await fetchUserTable('', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      records: [{ id: recordId, fields }],
+    }),
+  })
+
+  const user = await getUserByRecordId(recordId)
+  if (!user) throw new Error('Gagal memperbarui user')
+  return user
+}
+
+/** Permanently deletes a user record from Airtable. */
+export async function deleteUserByAdmin(recordId: string): Promise<void> {
+  const id = recordId.trim()
+  if (!id) throw new Error('recordId wajib diisi')
+
+  const config = getConfig()
+  const url = `https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(config.tableName)}/${encodeURIComponent(id)}`
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    const data = (await response.json()) as { error?: { message?: string } }
+    throw new Error(data.error?.message || `Gagal menghapus user: HTTP ${response.status}`)
+  }
+}

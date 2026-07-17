@@ -5,10 +5,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Landmark, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { href: '/admin', label: 'Menu', exact: true },
-  { href: '/admin/approval', label: 'Approval' },
-  { href: '/admin/lontar', label: 'Lontar' },
-  { href: '/admin/users', label: 'Users' },
+  { href: '/visitor', label: 'Menu', exact: true },
+  { href: '/visitor/register-lontar', label: 'Register Lontar' },
+  { href: '/visitor/requests', label: 'Your Request' },
 ] as const
 
 function isActive(pathname: string, href: string, exact?: boolean) {
@@ -16,7 +15,7 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-export function AdminHeader() {
+export function VisitorHeader() {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -35,8 +34,8 @@ export function AdminHeader() {
               <Landmark className="size-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="font-serif text-lg font-bold text-primary-foreground">LOKAMARK Admin</p>
-              <p className="text-xs text-primary-foreground/60">Kelola data lontar</p>
+              <p className="font-serif text-lg font-bold text-primary-foreground">LOKAMARK Visitor</p>
+              <p className="text-xs text-primary-foreground/60">Registrasi lontar</p>
             </div>
           </Link>
 
@@ -59,7 +58,7 @@ export function AdminHeader() {
         </div>
 
         <nav
-          aria-label="Admin"
+          aria-label="Visitor"
           className="-mx-1 mt-4 flex gap-1 overflow-x-auto pb-0.5"
         >
           {NAV_ITEMS.map((item) => {

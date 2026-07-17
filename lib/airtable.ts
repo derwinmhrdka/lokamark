@@ -31,9 +31,6 @@ type AirtableFields = {
   qr?: AirtableAttachment[]
 }
 
-/** Attachment field name on `lontar_detail` for stored QR PNGs */
-export const AIRTABLE_FIELD_QR = 'qr'
-
 type AirtableRecord = {
   id: string
   fields: AirtableFields
@@ -106,11 +103,7 @@ function toAirtableFields(
   if (options?.updatedBy) fields.updatedBy = options.updatedBy.trim()
   if (options?.updatedDate) fields.updatedDate = options.updatedDate
 
-  const image = input.image.trim()
-  if (image) {
-    fields.image = [{ url: image }]
-  }
-
+  // `image` is an attachment field — uploaded separately via uploadAttachment
   return fields
 }
 
@@ -273,13 +266,17 @@ export async function generateNextLontarId(year = new Date().getFullYear()): Pro
 
 export async function createManuscript(
   input: ManuscriptInput,
-  options: { status?: LontarStatus; actor: string },
+  options: {
+    status?: LontarStatus
+    actor: string
+    image?: { base64: string; contentType: string; filename: string }
+  },
 ): Promise<ManuscriptRecord> {
   const status = options.status ?? LONTAR_STATUS_VERIFIED
   const actor = options.actor.trim()
   const today = nowDateTime()
   const generatedId = await generateNextLontarId()
-  const payload: ManuscriptInput = { ...input, id: generatedId }
+  const payload: ManuscriptInput = { ...input, id: generatedId, image: '' }
 
   // Rare race: if ID was taken between generate and create, retry once
   const existing = await findManuscriptRecordById(generatedId)
@@ -308,9 +305,12 @@ export async function createManuscript(
     false,
   )
 
-  const record = data.records?.[0]
-  const mapped = record ? mapRecord(record) : null
+  let mapped = data.records?.[0] ? mapRecord(data.records[0]) : null
   if (!mapped) throw new Error('Gagal membuat record lontar')
+
+  if (options.image) {
+    mapped = await uploadManuscriptImage(mapped.recordId, options.image)
+  }
 
   if (mapped.status === LONTAR_STATUS_VERIFIED) {
     return uploadLontarQr(mapped.recordId, mapped.id)
@@ -319,11 +319,80 @@ export async function createManuscript(
   return mapped
 }
 
-/** Generate QR PNG for the lontar ID and store it in Airtable attachment field `qr`. */
+export async function uploadManuscriptImage(
+  recordId: string,
+  image: { base64: string; contentType: string; filename: string },
+  options?: { replace?: boolean },
+): Promise<ManuscriptRecord> {
+  const fieldName = 'image'
+
+  if (options?.replace) {
+    await airtableFetch<AirtableWriteResponse>(
+      '',
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          records: [{ id: recordId, fields: { image: [] } }],
+        }),
+      },
+      false,
+    )
+  }
+
+  const uploadHosts = ['https://content.airtable.com', 'https://api.airtable.com'] as const
+  for (const host of uploadHosts) {
+    const uploaded = await tryUploadAttachmentBytes({
+      host,
+      recordId,
+      fieldName,
+      filename: image.filename,
+      file: image.base64,
+      contentType: image.contentType,
+    })
+    if (uploaded) return uploaded
+  }
+
+  throw new Error(
+    `Gagal mengunggah gambar ke Airtable. Pastikan field attachment "${fieldName}" ada di tabel ${AIRTABLE_TABLE_LONTAR}.`,
+  )
+}
+
+/** Generate QR PNG for the lontar ID and store it in the Airtable attachment field `qr`. */
 export async function uploadLontarQr(recordId: string, lontarId: string): Promise<ManuscriptRecord> {
+  const fieldName = 'qr'
+  const id = lontarId.trim().toUpperCase()
+  const filename = `lokamark-${id}.png`
+
+  // 1) Prefer direct binary upload (content host is what Airtable SDKs use)
+  const file = await generateLontarQrBase64(id)
+  const uploadHosts = ['https://content.airtable.com', 'https://api.airtable.com'] as const
+
+  for (const host of uploadHosts) {
+    const uploaded = await tryUploadAttachmentBytes({
+      host,
+      recordId,
+      fieldName,
+      filename,
+      file,
+      contentType: 'image/png',
+    })
+    if (uploaded) return uploaded
+  }
+
+  // 2) Fallback: Airtable pulls a public QR image URL into the attachment field
+  return attachQrByPublicUrl(recordId, id, filename)
+}
+
+async function tryUploadAttachmentBytes(params: {
+  host: string
+  recordId: string
+  fieldName: string
+  filename: string
+  file: string
+  contentType: string
+}): Promise<ManuscriptRecord | null> {
   const config = getConfig()
-  const file = await generateLontarQrBase64(lontarId)
-  const url = `https://api.airtable.com/v0/${config.baseId}/${encodeURIComponent(recordId)}/${encodeURIComponent(AIRTABLE_FIELD_QR)}/uploadAttachment`
+  const url = `${params.host}/v0/${config.baseId}/${encodeURIComponent(params.recordId)}/${encodeURIComponent(params.fieldName)}/uploadAttachment`
 
   const response = await fetch(url, {
     method: 'POST',
@@ -332,26 +401,57 @@ export async function uploadLontarQr(recordId: string, lontarId: string): Promis
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      contentType: 'image/png',
-      filename: `lokamark-${lontarId.trim().toUpperCase()}.png`,
-      file,
+      contentType: params.contentType,
+      filename: params.filename,
+      file: params.file,
     }),
     cache: 'no-store',
   })
 
-  const data = (await response.json()) as AirtableRecord & { error?: { message?: string } }
-  if (!response.ok) {
-    const detail = data.error?.message || `HTTP ${response.status}`
-    throw new Error(
-      `Gagal menyimpan QR ke Airtable: ${detail}. Pastikan field attachment "${AIRTABLE_FIELD_QR}" ada di tabel ${AIRTABLE_TABLE_LONTAR}.`,
-    )
-  }
+  if (!response.ok) return null
 
+  const data = (await response.json()) as AirtableRecord
   const mapped = mapRecord(data)
   if (mapped) return mapped
 
+  return getManuscriptByRecordId(params.recordId)
+}
+
+async function attachQrByPublicUrl(
+  recordId: string,
+  lontarId: string,
+  filename: string,
+): Promise<ManuscriptRecord> {
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(lontarId)}&margin=16`
+
+  const data = await airtableFetch<AirtableWriteResponse>(
+    '',
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        records: [
+          {
+            id: recordId,
+            fields: {
+              qr: [{ url: qrImageUrl, filename }],
+            },
+          },
+        ],
+      }),
+    },
+    false,
+  )
+
+  const record = data.records?.[0]
+  const mapped = record ? mapRecord(record) : null
+  if (mapped) return mapped
+
   const refreshed = await getManuscriptByRecordId(recordId)
-  if (!refreshed) throw new Error('QR tersimpan tetapi gagal memuat ulang record')
+  if (!refreshed) {
+    throw new Error(
+      'Gagal menyimpan QR ke Airtable. Pastikan field attachment bernama "qr" ada di tabel lontar_detail.',
+    )
+  }
   return refreshed
 }
 
@@ -359,6 +459,7 @@ export async function updateManuscript(
   recordId: string,
   input: ManuscriptInput,
   actor: string,
+  options?: { image?: { base64: string; contentType: string; filename: string } },
 ): Promise<ManuscriptRecord> {
   const duplicate = await findManuscriptRecordById(input.id)
   if (duplicate && duplicate.recordId !== recordId) {
@@ -374,10 +475,13 @@ export async function updateManuscript(
         records: [
           {
             id: recordId,
-            fields: toAirtableFields(input, {
-              updatedBy: actor.trim(),
-              updatedDate: today,
-            }),
+            fields: toAirtableFields(
+              { ...input, image: '' },
+              {
+                updatedBy: actor.trim(),
+                updatedDate: today,
+              },
+            ),
           },
         ],
       }),
@@ -385,9 +489,13 @@ export async function updateManuscript(
     false,
   )
 
-  const record = data.records?.[0]
-  const mapped = record ? mapRecord(record) : null
+  let mapped = data.records?.[0] ? mapRecord(data.records[0]) : null
   if (!mapped) throw new Error('Gagal memperbarui record lontar')
+
+  if (options?.image) {
+    mapped = await uploadManuscriptImage(mapped.recordId, options.image, { replace: true })
+  }
+
   return mapped
 }
 

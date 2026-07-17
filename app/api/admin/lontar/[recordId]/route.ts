@@ -1,25 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdminSession } from '@/lib/auth'
 import { getManuscriptByRecordId, updateManuscript } from '@/lib/airtable'
-import type { ManuscriptInput } from '@/lib/manuscripts'
-
-function parseInput(body: unknown): ManuscriptInput | null {
-  if (!body || typeof body !== 'object') return null
-  const data = body as Record<string, unknown>
-  const id = typeof data.id === 'string' ? data.id : ''
-  const name = typeof data.name === 'string' ? data.name : ''
-  if (!id.trim() || !name.trim()) return null
-
-  return {
-    id,
-    name,
-    category: typeof data.category === 'string' ? data.category : '',
-    institution: typeof data.institution === 'string' ? data.institution : '',
-    year: typeof data.year === 'string' ? data.year : '',
-    description: typeof data.description === 'string' ? data.description : '',
-    image: typeof data.image === 'string' ? data.image : '',
-  }
-}
+import { parseLontarMultipartForm } from '@/lib/lontar-form-data'
 
 type RouteContext = {
   params: Promise<{ recordId: string }>
@@ -45,12 +27,15 @@ export async function PATCH(request: Request, context: RouteContext) {
   try {
     const user = await requireAdminSession()
     const { recordId } = await context.params
-    const input = parseInput(await request.json())
-    if (!input) {
+    const { fields, image } = await parseLontarMultipartForm(request)
+
+    if (!fields.id.trim() || !fields.name.trim()) {
       return NextResponse.json({ error: 'ID dan nama wajib diisi' }, { status: 400 })
     }
 
-    const record = await updateManuscript(recordId, input, user.username)
+    const record = await updateManuscript(recordId, fields, user.username, {
+      image: image ?? undefined,
+    })
     return NextResponse.json({ record })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Gagal memperbarui lontar'

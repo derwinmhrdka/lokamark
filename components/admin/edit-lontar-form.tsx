@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LontarForm } from '@/components/admin/lontar-form'
+import { LontarForm, buildLontarFormData, type LontarFormSubmit } from '@/components/admin/lontar-form'
 import type { ManuscriptInput, ManuscriptRecord } from '@/lib/manuscripts'
 
 type EditLontarFormProps = {
@@ -19,14 +19,16 @@ export function EditLontarForm({ recordId, initial }: EditLontarFormProps) {
     institution: initial.institution,
     year: initial.year,
     description: initial.description,
-    image: initial.image === '/placeholder.svg' ? '' : initial.image,
+    image: '',
   }
 
-  async function handleSubmit(data: ManuscriptInput) {
+  const existingImageUrl =
+    initial.image && initial.image !== '/placeholder.svg' ? initial.image : undefined
+
+  async function handleSubmit(data: LontarFormSubmit) {
     const res = await fetch(`/api/admin/lontar/${encodeURIComponent(recordId)}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: buildLontarFormData(data),
     })
     const json = (await res.json()) as { error?: string }
     if (!res.ok) throw new Error(json.error || 'Gagal memperbarui lontar')
@@ -41,6 +43,7 @@ export function EditLontarForm({ recordId, initial }: EditLontarFormProps) {
       submitLabel="Simpan Perubahan"
       onSubmit={handleSubmit}
       idReadOnly
+      existingImageUrl={existingImageUrl}
     />
   )
 }

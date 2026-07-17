@@ -1,15 +1,22 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import type { ManuscriptInput } from '@/lib/manuscripts'
+
+export type LontarFormSubmit = {
+  fields: ManuscriptInput
+  imageFile: File | null
+}
 
 type LontarFormProps = {
   initial: ManuscriptInput
   submitLabel: string
-  onSubmit: (data: ManuscriptInput) => Promise<void>
+  onSubmit: (data: LontarFormSubmit) => Promise<void>
   idReadOnly?: boolean
   /** Hide ID field — used on create (ID is auto-generated server-side) */
   autoId?: boolean
+  existingImageUrl?: string
 }
 
 const inputClass =
@@ -23,8 +30,11 @@ export function LontarForm({
   onSubmit,
   idReadOnly = false,
   autoId = false,
+  existingImageUrl,
 }: LontarFormProps) {
-  const [form, setForm] = useState<ManuscriptInput>(initial)
+  const [form, setForm] = useState<ManuscriptInput>({ ...initial, image: '' })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,18 +42,27 @@ export function LontarForm({
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    setImageFile(file)
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(file ? URL.createObjectURL(file) : null)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
     try {
-      await onSubmit(form)
+      await onSubmit({ fields: form, imageFile })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
     } finally {
       setLoading(false)
     }
   }
+
+  const displayImage = previewUrl || existingImageUrl || null
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -119,19 +138,29 @@ export function LontarForm({
             className={inputClass}
           />
         </div>
-        <div>
+        <div className="sm:col-span-2">
           <label htmlFor="image" className={labelClass}>
-            URL Gambar
+            Gambar
           </label>
           <input
             id="image"
             name="image"
-            type="url"
-            value={form.image}
-            onChange={(e) => updateField('image', e.target.value)}
-            placeholder="https://..."
-            className={inputClass}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleImageChange}
+            className={`${inputClass} file:mr-3 file:rounded-lg file:border-0 file:bg-gold/15 file:px-3 file:py-1.5 file:text-sm file:font-medium`}
           />
+          {displayImage ? (
+            <div className="relative mt-3 aspect-[4/3] w-full max-w-xs overflow-hidden rounded-xl border border-border bg-muted">
+              <Image
+                src={displayImage}
+                alt="Preview gambar lontar"
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -165,4 +194,18 @@ export function LontarForm({
       </button>
     </form>
   )
+}
+
+export function buildLontarFormData(data: LontarFormSubmit) {
+  const formData = new FormData()
+  formData.set('id', data.fields.id)
+  formData.set('name', data.fields.name)
+  formData.set('category', data.fields.category)
+  formData.set('institution', data.fields.institution)
+  formData.set('year', data.fields.year)
+  formData.set('description', data.fields.description)
+  if (data.imageFile) {
+    formData.set('image', data.imageFile)
+  }
+  return formData
 }

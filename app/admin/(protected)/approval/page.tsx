@@ -1,5 +1,3 @@
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { listPendingManuscripts } from '@/lib/airtable'
 import { ApprovalList } from '@/components/admin/approval-list'
 
@@ -16,13 +14,6 @@ export default async function ApprovalPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link
-          href="/admin"
-          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground transition hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          Kembali
-        </Link>
         <h1 className="font-serif text-2xl font-bold text-foreground">Approval</h1>
       </div>
 
